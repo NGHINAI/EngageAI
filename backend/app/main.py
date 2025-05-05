@@ -1,24 +1,27 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
+from .db import engine, Base
+from .routers import auth, integrations, monitoring
 
-app = FastAPI()
+app = FastAPI(title="EngageAI", version="1.0.0")
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Example model for user authentication
-class UserCreate(BaseModel):
-    username: str
-    password: str
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
-@app.get("/api/v1/healthcheck")
-def healthcheck():
-    return {"status": "ok"}
+# Include routers
+app.include_router(auth.router)
+app.include_router(integrations.router)
+app.include_router(monitoring.router)
+
+@app.get("/")
+def read_root():
+    return {"message": "EngageAI API is running"}
